@@ -24,10 +24,8 @@ namespace ForceDrop
             else {
                 Logger.Log("Configuration.Instance.Enabled == false");
                 this.Unload();
-
             }
         }
-
 
         public override TranslationList DefaultTranslations
         {
@@ -42,103 +40,116 @@ namespace ForceDrop
             }
         }
 
-
         [RocketCommand("ForceDrop", "", "", AllowedCaller.Both)]
         [RocketCommandAlias("Fd")]
         public void Execute(IRocketPlayer caller, params string[] command)
         {
-            if(command[0].ToLower() == "all")
+            switch (command.Length)
             {
-                if(command.Length == 1)
+                case (0):
+                    if (caller is ConsolePlayer)
+                        Logger.LogException(new InvalidOperationException($"Console does not have an iventory to drop! You must be a player to execute /fd or /ForceDrop"));
+                    else
+                        DropItems((UnturnedPlayer)caller);// DROP FOR CALLER
+                    break;
+                case (1):
+                    CheckCommand();
+                    break;
+                case (2):
+                    CheckCommand();
+                    break;
+                default:
+                    Logger.LogException(new InvalidOperationException($"Incorrect command data!"));
+                    break;
+            }
+            void CheckCommand()
+            {
+                ushort id = 0;
+                if (command.Length > 1)
                 {
-                    foreach(var steamplayer in Provider.clients)
+                    if (!(ushort.TryParse(command[1], out id)))
                     {
-                        UnturnedPlayer player = UnturnedPlayer.FromSteamPlayer(steamplayer);
-                        for (byte page = 0; page < 8; page++)
-                        {
-                            var count = player.Inventory.getItemCount(page);
-
-                            for (byte index = 0; index < count; index++)
-                            {
-                                foreach (var number in Configuration.Instance.WhiteListedFromDrop)
-                                {
-                                    if (player.Inventory.getItem(page, index).item.id == number)
-                                    { }
-                                    else
-                                    {
-                                        player.Inventory.askDropItem(player.CSteamID, page, player.Inventory.getItem(page, index).x, player.Inventory.getItem(page, index).y);
-                                    }
-                                }
-                            }
-                        }
-                        UnturnedChat.Say(caller, Translate("drop_message_public", ushort.Parse(command[1].ToString())));
-                    }
+                        Logger.LogError("Command must be a positive number");
+                        return;
+                    }                     
                 }
-                if(command.Length == 2)
+                
+                if (command[0].ToLower() == "all")// DROP FOR ALL
                 {
-                    foreach(var steamplayer in Provider.clients)
+                    if (Provider.clients.Count != 0 && id == 0)// NO ID
                     {
-                        UnturnedPlayer player = UnturnedPlayer.FromSteamPlayer(steamplayer);
-                        for (byte page = 0; page < 8; page++)
+                        foreach (var steamplayer in Provider.clients)
                         {
-                            var count = player.Inventory.getItemCount(page);
-
-                            for (byte index = 0; index < count; index++)
-                            {
-                                if (player.Inventory.getItem(page, index).item.id == ushort.Parse(command[1].ToString()))
-                                {
-                                    player.Inventory.askDropItem(player.CSteamID, page, player.Inventory.getItem(page, index).x, player.Inventory.getItem(page, index).y);
-                                }
-                            }
+                            DropItems(UnturnedPlayer.FromSteamPlayer(steamplayer));                          
                         }
+                        UnturnedChat.Say(caller, Translate("drop_message_public"));
                     }
-                    UnturnedChat.Say(caller, Translate("drop_message_id_public", ushort.Parse(command[1].ToString())));
+                    else if (Provider.clients.Count != 0)// WITH valid ID
+                    {
+                        foreach (var steamplayer in Provider.clients)
+                        {
+                            DropItems(UnturnedPlayer.FromSteamPlayer(steamplayer), id);
+                        }
+                        UnturnedChat.Say(caller, Translate("drop_message_id_public", id.ToString()));
+                    }
+                    else
+                        Logger.LogError("players not found!");
+                }
+                else// DROP FOR PLAYER
+                {                  
+                    UnturnedPlayer player = UnturnedPlayer.FromName(command[0]);
+                    if (player != null && id == 0)// NO ID
+                    {
+                        DropItems(player);
+                        UnturnedChat.Say(caller, Translate("drop_message", caller.DisplayName));
+                    }
+                        
+                    else if (player != null)// WITH ID
+                    {
+                        DropItems(player, id);
+                        UnturnedChat.Say(caller, Translate("drop_message_id", id.ToString(), caller.DisplayName));
+                    }
+                        
+                    else
+                        Logger.LogError("player not found!");
                 }
             }
-
-            if (command.Length == 1 && command[0].ToLower() != "all")
+        }
+        void DropItems(UnturnedPlayer player)
+        {
+            byte itemsCount;
+            for (byte page = 0; page < 7; page++)
             {
-                UnturnedPlayer player = UnturnedPlayer.FromName(command[0]);
-                if (player != null)
-                {
-                    for (byte page = 0; page < 8; page++)
-                    {
-                        var count = player.Inventory.getItemCount(page);
+                itemsCount = player.Inventory.getItemCount(page);
+                if (itemsCount == 0)
+                    continue;
 
-                        for (byte index = 0; index < count; index++)
-                        {
-                            foreach (var number in Configuration.Instance.WhiteListedFromDrop)
-                            {
-                                if (player.Inventory.getItem(page, index).item.id == number)
-                                { }
-                                else
-                                {
-                                    player.Inventory.askDropItem(player.CSteamID, page, player.Inventory.getItem(page, index).x, player.Inventory.getItem(page, index).y);
-                                }
-                            }
-                        }
-                    }
-                    UnturnedChat.Say(caller, Translate("drop_message", player.DisplayName));    
+                for (byte index = 0; index < itemsCount; index++)
+                {
+                    player.Inventory.askDropItem(player.CSteamID, page, player.Inventory.getItem(page, index).x, player.Inventory.getItem(page, index).y);
                 }
-            }
-            if(command.Length == 2 && command[0].ToLower() != "all")
-            {
-                UnturnedPlayer player = UnturnedPlayer.FromName(command[0]);
-                if (player != null)
-                {
-                    for (byte page = 0; page < 8; page++)
-                    {
-                        var count = player.Inventory.getItemCount(page);
 
-                        for (byte index = 0; index < count; index++)
-                        {
-                            if (player.Inventory.getItem(page, index).item.id == ushort.Parse(command[1].ToString()))
-                            {
-                                player.Inventory.askDropItem(player.CSteamID, page, player.Inventory.getItem(page, index).x, player.Inventory.getItem(page, index).y);
-                            }
-                        }
+            }
+        }
+        void DropItems(UnturnedPlayer player, ushort id)
+        {
+            byte itemsCount;
+            for (byte page = 0; page < 7; page++)
+            {
+                itemsCount = player.Inventory.getItemCount(page);
+                if (itemsCount == 0)
+                    continue;
+                for (byte index = 0; index < itemsCount; index++)
+                {
+                    if (Configuration.Instance.WhiteListedFromDrop.Contains(player.Inventory.getItem(page, index).item.id))
+                        continue;
+                    else
+                    {
+                        //player.Inventory.sendDropItem(page, player.Inventory.getItem(page, index).x, player.Inventory.getItem(page, index).y);
+
+                        Console.WriteLine($"Item #{index}  x: {player.Inventory.getItem(page, index).x}, y: {player.Inventory.getItem(page, index).y}");
                     }
-                    UnturnedChat.Say(caller, Translate("drop_message_id", ushort.Parse(command[1].ToString()), player.DisplayName));
+                        //player.Inventory.askDropItem(player.CSteamID, page, player.Inventory.getItem(page, index).x, player.Inventory.getItem(page, index).y);
                 }
             }
         }

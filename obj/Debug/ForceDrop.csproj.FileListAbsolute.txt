@@ -1,0 +1,13 @@
+E:\Users\Deniel\Documents\GitHub\ForceDrop\bin\Debug\ForceDrop.dll
+E:\Users\Deniel\Documents\GitHub\ForceDrop\bin\Debug\ForceDrop.pdb
+E:\Users\Deniel\Documents\GitHub\ForceDrop\bin\Debug\Assembly-CSharp-firstpass.dll
+E:\Users\Deniel\Documents\GitHub\ForceDrop\bin\Debug\Assembly-CSharp.dll
+E:\Users\Deniel\Documents\GitHub\ForceDrop\bin\Debug\Rocket.API.dll
+E:\Users\Deniel\Documents\GitHub\ForceDrop\bin\Debug\Rocket.Core.dll
+E:\Users\Deniel\Documents\GitHub\ForceDrop\bin\Debug\Rocket.Unturned.dll
+E:\Users\Deniel\Documents\GitHub\ForceDrop\bin\Debug\UnityEngine.dll
+E:\Users\Deniel\Documents\GitHub\ForceDrop\obj\Debug\ForceDrop.csprojAssemblyReference.cache
+E:\Users\Deniel\Documents\GitHub\ForceDrop\obj\Debug\ForceDrop.csproj.CoreCompileInputs.cache
+E:\Users\Deniel\Documents\GitHub\ForceDrop\obj\Debug\ForceDrop.csproj.CopyComplete
+E:\Users\Deniel\Documents\GitHub\ForceDrop\obj\Debug\ForceDrop.dll
+E:\Users\Deniel\Documents\GitHub\ForceDrop\obj\Debug\ForceDrop.pdb

@@ -19,6 +19,7 @@ namespace ForceDrop
             {
                 116,
             };
+            Enabled = true;
         }
     }
 }
