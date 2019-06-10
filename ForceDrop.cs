@@ -50,7 +50,7 @@ namespace ForceDrop
                     if (caller is ConsolePlayer)
                         Logger.LogException(new InvalidOperationException($"Console does not have an iventory to drop! You must be a player to execute /fd or /ForceDrop"));
                     else
-                        DropItems((UnturnedPlayer)caller);// DROP FOR CALLER
+                        DropInventory((UnturnedPlayer)caller);// DROP FOR CALLER
                     break;
                 case (1):
                     CheckCommand();
@@ -80,7 +80,7 @@ namespace ForceDrop
                     {
                         foreach (var steamplayer in Provider.clients)
                         {
-                            DropItems(UnturnedPlayer.FromSteamPlayer(steamplayer));                          
+                            DropInventory(UnturnedPlayer.FromSteamPlayer(steamplayer));                          
                         }
                         UnturnedChat.Say(caller, Translate("drop_message_public"));
                     }
@@ -88,7 +88,7 @@ namespace ForceDrop
                     {
                         foreach (var steamplayer in Provider.clients)
                         {
-                            DropItems(UnturnedPlayer.FromSteamPlayer(steamplayer), id);
+                            DropInventory(UnturnedPlayer.FromSteamPlayer(steamplayer), id);
                         }
                         UnturnedChat.Say(caller, Translate("drop_message_id_public", id.ToString()));
                     }
@@ -100,13 +100,13 @@ namespace ForceDrop
                     UnturnedPlayer player = UnturnedPlayer.FromName(command[0]);
                     if (player != null && id == 0)// NO ID
                     {
-                        DropItems(player);
-                        UnturnedChat.Say(caller, Translate("drop_message", caller.DisplayName));
+                        DropInventory(player);
+                        UnturnedChat.Say(caller, Translate("drop_message", player.DisplayName));
                     }
                         
                     else if (player != null)// WITH ID
                     {
-                        DropItems(player, id);
+                        DropInventory(player, id);
                         UnturnedChat.Say(caller, Translate("drop_message_id", id.ToString(), caller.DisplayName));
                     }
                         
@@ -115,43 +115,78 @@ namespace ForceDrop
                 }
             }
         }
-        void DropItems(UnturnedPlayer player)
+        void DropInventory(UnturnedPlayer player)
         {
             byte itemsCount;
             for (byte page = 0; page < 7; page++)
             {
                 itemsCount = player.Inventory.getItemCount(page);
-                if (itemsCount == 0)
-                    continue;
-
                 for (byte index = 0; index < itemsCount; index++)
                 {
-                    player.Inventory.askDropItem(player.CSteamID, page, player.Inventory.getItem(page, index).x, player.Inventory.getItem(page, index).y);
+                    ItemManager.dropItem(player.Inventory.getItem(page, index).item, player.Position, true, true, false);
                 }
-
+                while (player.Inventory.getItemCount(page) != 0)
+                {
+                    for (byte index = 0; index < itemsCount; index++)
+                    {
+                        player.Inventory.removeItem(page, index);
+                        //player.Inventory.askDropItem(player.CSteamID, page, player.Inventory.getItem(page, index).x, player.Inventory.getItem(page, index).y); this is not working because sexy nelsing is криворукое мудло, sorry for my french.
+                    }
+                }           
             }
         }
-        void DropItems(UnturnedPlayer player, ushort id)
+        void DropInventory(UnturnedPlayer player, ushort id)
         {
             byte itemsCount;
+            byte counter;
+            System.Collections.Generic.Dictionary<Item, byte> whiteIds = new System.Collections.Generic.Dictionary<Item, byte>();
             for (byte page = 0; page < 7; page++)
             {
                 itemsCount = player.Inventory.getItemCount(page);
-                if (itemsCount == 0)
-                    continue;
                 for (byte index = 0; index < itemsCount; index++)
                 {
-                    if (Configuration.Instance.WhiteListedFromDrop.Contains(player.Inventory.getItem(page, index).item.id))
-                        continue;
+                    Item item = player.Inventory.getItem(page, index).item;
+                    if (Configuration.Instance.WhiteListedFromDrop.Contains(item.id))
+                    {
+                        counter = ItemCount(player, item);
+                        whiteIds.Add(item, counter);
+                    }
                     else
                     {
-                        //player.Inventory.sendDropItem(page, player.Inventory.getItem(page, index).x, player.Inventory.getItem(page, index).y);
-
-                        Console.WriteLine($"Item #{index}  x: {player.Inventory.getItem(page, index).x}, y: {player.Inventory.getItem(page, index).y}");
+                        if(id == item.id)
+                            ItemManager.dropItem(item, player.Position, false, false, false);
                     }
-                        //player.Inventory.askDropItem(player.CSteamID, page, player.Inventory.getItem(page, index).x, player.Inventory.getItem(page, index).y);
+                }
+                while (player.Inventory.getItemCount(page) != 0)
+                {
+                    for (byte index = 0; index < itemsCount; index++)
+                    {
+                        player.Inventory.removeItem(page, index);
+                    }
+                }
+                foreach (var item in whiteIds)
+                {
+                    //player.GiveItem(item.Key, item.Value);
+                    for (byte i = 0; i < item.Value; i++)
+                    {
+                        player.Inventory.forceAddItem(item.Key, true);
+                    }
                 }
             }
+        }
+        byte ItemCount(UnturnedPlayer player, Item item) // how many copies of item in player's inventory
+        {
+            byte counter = 0;
+            for (byte page = 0; page < 7; page++)
+            {
+                for (byte index = 0; index < player.Inventory.getItemCount(page); index++)
+                {
+                    if (item.id == player.Inventory.getItem(page, index).item.id)
+                        counter++;
+                }
+            }
+
+            return counter;
         }
     }
 }
