@@ -115,66 +115,70 @@ namespace ForceDrop
                 }
             }
         }
-        void DropInventory(UnturnedPlayer player)
+        void DropInventory(UnturnedPlayer player)// drop
         {
-            byte itemsCount;
+            byte itemsCountPage;
+            byte counter;
+            System.Collections.Generic.Dictionary<ushort, byte> whiteIds = new System.Collections.Generic.Dictionary<ushort, byte>();// for storing <id, amount>
             for (byte page = 0; page < 7; page++)
             {
-                itemsCount = player.Inventory.getItemCount(page);
-                for (byte index = 0; index < itemsCount; index++)
+                itemsCountPage = player.Inventory.getItemCount(page);
+                for (byte index = 0; index < itemsCountPage; index++)
                 {
-                    ItemManager.dropItem(player.Inventory.getItem(page, index).item, player.Position, true, true, false);
+                    Item item = player.Inventory.getItem(page, index).item;
+                    if (Configuration.Instance.WhiteListedFromDrop.Contains(item.id))//if item is whitelisted
+                    {
+                        if (!whiteIds.ContainsKey(item.id))// if a new id
+                        {
+                            counter = ItemCountTotal(player, item);// getting a number of items of particular id to give it back later
+                            whiteIds.Add(item.id, counter);// <id, amount>
+                        }
+                    }
+                    else
+                    {
+                        ItemManager.dropItem(item, player.Position, false, false, false);
+                    }
                 }
-                while (player.Inventory.getItemCount(page) != 0)
+                while (player.Inventory.getItemCount(page) != 0)// dropping all items
                 {
-                    for (byte index = 0; index < itemsCount; index++)
+                    for (byte index = 0; index < itemsCountPage; index++)
                     {
                         player.Inventory.removeItem(page, index);
                         //player.Inventory.askDropItem(player.CSteamID, page, player.Inventory.getItem(page, index).x, player.Inventory.getItem(page, index).y); this is not working because sexy nelsing is криворукое мудло, sorry for my french.
                     }
-                }           
+                }
+            }
+            foreach (var item in whiteIds)// giving back whitelisted items <id, amount>
+            {
+                player.GiveItem(item.Key, item.Value);
             }
         }
-        void DropInventory(UnturnedPlayer player, ushort id)
+        void DropInventory(UnturnedPlayer player, ushort id)// drop by id
         {
+            if (Configuration.Instance.WhiteListedFromDrop.Contains(id))
+            {
+                Rocket.Core.Logging.Logger.LogError($"id: {id} is whitelisted! Cannot remove it from a player!");
+                return;
+            }
+
             byte itemsCount;
-            byte counter;
-            System.Collections.Generic.Dictionary<Item, byte> whiteIds = new System.Collections.Generic.Dictionary<Item, byte>();
-            for (byte page = 0; page < 7; page++)
+            for (byte page = 0; page < 7; page++)//for each cloth iteration
             {
                 itemsCount = player.Inventory.getItemCount(page);
-                for (byte index = 0; index < itemsCount; index++)
+                for (byte index = 0; index < itemsCount; index++)// for each item in cloth iteration
                 {
-                    Item item = player.Inventory.getItem(page, index).item;
-                    if (Configuration.Instance.WhiteListedFromDrop.Contains(item.id))
-                    {
-                        counter = ItemCount(player, item);
-                        whiteIds.Add(item, counter);
-                    }
-                    else
-                    {
-                        if(id == item.id)
-                            ItemManager.dropItem(item, player.Position, false, false, false);
-                    }
+                    ItemManager.dropItem(player.Inventory.getItem(page, index).item, player.Position, false, false, false);
                 }
-                while (player.Inventory.getItemCount(page) != 0)
+                while (player.Inventory.getItemCount(page) != 0)// dropping all inventory, unfortunately when method is executed once, id is not dropping all items, so need to do it until zero..
                 {
                     for (byte index = 0; index < itemsCount; index++)
                     {
                         player.Inventory.removeItem(page, index);
                     }
                 }
-                foreach (var item in whiteIds)
-                {
-                    //player.GiveItem(item.Key, item.Value);
-                    for (byte i = 0; i < item.Value; i++)
-                    {
-                        player.Inventory.forceAddItem(item.Key, true);
-                    }
-                }
             }
         }
-        byte ItemCount(UnturnedPlayer player, Item item) // how many copies of item in player's inventory
+        byte ItemCountTotal(UnturnedPlayer player, Item item) // how many copies of item in player's inventory
         {
             byte counter = 0;
             for (byte page = 0; page < 7; page++)
@@ -184,6 +188,17 @@ namespace ForceDrop
                     if (item.id == player.Inventory.getItem(page, index).item.id)
                         counter++;
                 }
+            }
+
+            return counter;
+        }
+        byte ItemCount(UnturnedPlayer player, Item item, byte page) // how many copies of item in player's inventory on page
+        {
+            byte counter = 0;
+            for (byte index = 0; index < player.Inventory.getItemCount(page); index++)
+            {
+                if (item.id == player.Inventory.getItem(page, index).item.id)
+                    counter++;
             }
 
             return counter;
