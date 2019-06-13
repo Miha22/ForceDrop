@@ -1,9 +1,20 @@
 ﻿<Properties>
-  <MonoDevelop.Ide.Workbench ActiveDocument="ForceDropConfiguration.cs">
+  <MonoDevelop.Ide.Workbench ActiveDocument="ForceDrop.cs">
     <Files>
       <File FileName="ForceDrop.cs" Line="12" Column="5" />
       <File FileName="ForceDropConfiguration.cs" Line="1" Column="1" />
     </Files>
+    <Pads>
+      <Pad Id="ProjectPad">
+        <State name="__root__">
+          <Node name="ForceDrop" expanded="True">
+            <Node name="ForceDrop" expanded="True">
+              <Node name="ForceDrop.cs" selected="True" />
+            </Node>
+          </Node>
+        </State>
+      </Pad>
+    </Pads>
   </MonoDevelop.Ide.Workbench>
   <MonoDevelop.Ide.DebuggingService.PinnedWatches />
   <MonoDevelop.Ide.Workspace ActiveConfiguration="Debug" />
